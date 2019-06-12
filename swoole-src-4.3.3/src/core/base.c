@@ -41,9 +41,10 @@ __thread swThreadGlobal_t SwooleTG;
 swWorkerGlobal_t SwooleWG;
 
 static void swoole_fatal_error(int code, const char *format, ...);
-
+//SwooleG全局变量初始化
 void swoole_init(void)
 {
+    
     if (SwooleG.running)
     {
         return;
@@ -84,12 +85,15 @@ void swoole_init(void)
 #endif
 
     //init global shared memory
+    //初始化共享内存，共享内存实现是基于mmap
+    //swMemoryGlobal_new的第二上参数表示是否初始化共享内存，0 => sw_malloc , 1 => sw_shm_malloc
     SwooleG.memory_pool = swMemoryGlobal_new(SW_GLOBAL_MEMORY_PAGESIZE, 1);
     if (SwooleG.memory_pool == NULL)
     {
         printf("[Master] Fatal Error: global memory allocation failure");
         exit(1);
     }
+    //调用 swMemoryGlobal_alloc方法
     SwooleGS = SwooleG.memory_pool->alloc(SwooleG.memory_pool, sizeof(swGlobalS_t));
     if (SwooleGS == NULL)
     {
@@ -98,11 +102,14 @@ void swoole_init(void)
     }
 
     //init global lock
-    swMutex_create(&SwooleGS->lock, 1);
-    swMutex_create(&SwooleGS->lock_2, 1);
-    swMutex_create(&SwooleG.lock, 0);
+    //创建memory锁
+    //pthread_mutex_init
+    swMutex_create(&SwooleGS->lock, 1); //此锁进程间同步
+    swMutex_create(&SwooleGS->lock_2, 1);//此锁进程间同步
+    swMutex_create(&SwooleG.lock, 0);//此锁非进程间同步
 
     SwooleG.max_sockets = 1024;
+    //判断非win系统，根据limit重置mac_sockets
 #ifndef _WIN32
     struct rlimit rlmt;
     if (getrlimit(RLIMIT_NOFILE, &rlmt) < 0)
@@ -115,9 +122,10 @@ void swoole_init(void)
         SwooleG.max_sockets = MIN((uint32_t) rlmt.rlim_cur, SW_SESSION_LIST_SIZE);
     }
 #endif
-
+    //socket buffer size
     SwooleG.socket_buffer_size = SW_SOCKET_BUFFER_SIZE;
-
+    //buffer stack string
+    //buffer 打印
     SwooleTG.buffer_stack = swString_new(SW_STACK_BUFFER_SIZE);
     if (SwooleTG.buffer_stack == NULL)
     {
@@ -148,7 +156,8 @@ void swoole_init(void)
     SwooleG.enable_signalfd = 1;
 #endif
 }
-
+//SwooleG全局变量release
+//swMemoryGlobal_destroy方法release memory_pool
 void swoole_clean(void)
 {
     //free the global memory

@@ -189,6 +189,8 @@ const zend_function_entry swoole_functions[] =
     PHP_FE(swoole_get_mime_type, arginfo_swoole_get_mime_type)
     PHP_FE(swoole_clear_dns_cache, arginfo_swoole_void)
     PHP_FE(swoole_internal_call_user_shutdown_begin, arginfo_swoole_void)
+    PHP_FE(swoole_test_print_global, arginfo_swoole_void)
+
     PHP_FE_END /* Must be the last line in swoole_functions[] */
 };
 
@@ -583,6 +585,7 @@ swoole_object_array swoole_objects;
  */
 PHP_MINIT_FUNCTION(swoole)
 {
+    //module加载的时候调用 
     ZEND_INIT_MODULE_GLOBALS(swoole, php_swoole_init_globals, NULL);
     REGISTER_INI_ENTRIES();
 
@@ -824,6 +827,7 @@ PHP_MINIT_FUNCTION(swoole)
 
     //swoole init
     swoole_init();
+    swInfo("call swoole_init function......");
     if (!SWOOLE_G(enable_coroutine))
     {
         SwooleG.enable_coroutine = 0;
@@ -884,6 +888,7 @@ PHP_MINIT_FUNCTION(swoole)
  */
 PHP_MSHUTDOWN_FUNCTION(swoole)
 {
+    //module卸载的时候调用 
     swoole_clean();
 
     return SUCCESS;
@@ -1288,6 +1293,13 @@ PHP_FUNCTION(swoole_internal_call_user_shutdown_begin)
         php_error_docref(NULL, E_WARNING, "can not call this function in user level");
         RETURN_FALSE;
     }
+}
+
+PHP_FUNCTION(swoole_test_print_global)
+{
+    char str[1024];
+    sprintf(str, "running : %d", SwooleG.running);
+    RETURN_STRING(str);
 }
 
 /*

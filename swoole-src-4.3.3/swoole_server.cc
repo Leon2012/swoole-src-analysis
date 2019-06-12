@@ -485,7 +485,7 @@ static zend_object *swoole_server_task_create_object(zend_class_entry *ce)
 
     return object;
 }
-
+//声明Swoole\\Server
 void swoole_server_init(int module_number)
 {
     SW_INIT_CLASS_ENTRY(swoole_server, "Swoole\\Server", "swoole_server", NULL, swoole_server_methods);
